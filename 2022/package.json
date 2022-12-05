@@ -1,0 +1,17 @@
+{
+  "name": "1",
+  "version": "1.0.0",
+  "description": "Advent of code 2022",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node \"./${npm_config_day_to_run}/index.ts\""
+  },
+  "author": "Reksa97",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.11.10"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
