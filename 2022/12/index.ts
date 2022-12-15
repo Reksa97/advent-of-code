@@ -1,10 +1,5 @@
 import { readFileSync } from 'fs'
-
-interface Position {
-  x: number,
-  y: number,
-  parent?: Position
-}
+import { Position, positionToString } from '../utils'
 
 interface VisitedPositions {
   [position: string]: boolean
@@ -42,10 +37,6 @@ const getStartingPositions = (part: 1 | 2): Position[] => {
   })
 
   return startPositions
-}
-
-const positionToString = (position: Position): string => {
-  return `${position.x}:${position.y}`
 }
 
 const getElevationAt = (position: Position): string => {
