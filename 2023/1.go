@@ -4,6 +4,7 @@ import (
 	"aoc2023/common"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -14,11 +15,27 @@ func main() {
 		return
 	}
 
+	sum := 0
 	for _, line := range lines {
-		fmt.Println(line)
-		// Add your logic here
+		firstNumber := ""
+		lastNumber := ""
+		for _, char := range line {
+			if char >= '0' && char <= '9' {
+				if firstNumber == "" {
+					firstNumber = string(char)
+				}
+				lastNumber = string(char)
+			}
+		}
+		numberString := firstNumber + lastNumber
+		number, err := strconv.Atoi(numberString)
+		if err != nil {
+			fmt.Printf("Error converting string to int: %s\n", err)
+			return
+		}
+		sum += number
 	}
 
 	// Add your problem-solving logic here and print the result.
-	fmt.Println("Result: [Your Solution Here]")
+	fmt.Println(sum)
 }
