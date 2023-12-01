@@ -5,11 +5,11 @@ I chose Golang for this year's Advent of Code. I'm not sure if I'll stick with i
 Insert your input to inputs/1.input and run the program like this:
 
 ```
-go run 1.go
+go run 1.go [1|2]
 ```
 
 or use common test_inputs/1.input like this:
 
 ```
-go run 1.go --test
+go run 1.go [1|2] --test
 ```

@@ -5,17 +5,41 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
+func GetPart(args []string) int {
+	// Determine which part to run, default to Part 1
+	part := 1
+	if len(os.Args) > 1 {
+		var err error
+		part, err = strconv.Atoi(os.Args[1])
+		if err != nil || (part != 1 && part != 2) {
+			fmt.Println("Invalid part argument. Defaulting to 1.")
+			return 1
+		}
+	}
+	return part
+}
+
 func IsTestMode(args []string) bool {
-	return len(args) > 1 && args[1] == "--test"
+	return len(args) > 2 && args[2] == "--test"
 }
 
 func ReadInput(day int, args []string) ([]string, error) {
 	isTest := IsTestMode(args)
+	if isTest {
+		fmt.Println("Test mode")
+	}
+	part := GetPart(args)
 	var inputFile string
 	if isTest {
-		inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.input", day))
+		if part == 1 {
+
+			inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.1.input", day))
+		} else {
+			inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.2.input", day))
+		}
 	} else {
 		inputFile = filepath.Join(".", "inputs", fmt.Sprintf("%d.input", day))
 	}
