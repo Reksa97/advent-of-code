@@ -12,7 +12,7 @@ func hasSymbol(lines []string, fromX int, toX int, fromY int, toY int) bool {
 	if fromX < 0 {
 		fromX = 0
 	}
-	maxX := len([]rune(lines[0])) - 1
+	maxX := len(lines[0]) - 1
 	if toX > maxX {
 		toX = maxX
 	}
@@ -24,8 +24,9 @@ func hasSymbol(lines []string, fromX int, toX int, fromY int, toY int) bool {
 	}
 
 	for y := fromY; y <= toY; y++ {
+		line := lines[y]
 		for x := fromX; x <= toX; x++ {
-			char := []rune(lines[y])[x]
+			char := line[x]
 			// if char is not a digit or a '.' then it's a symbol
 			if (char < '0' || char > '9') && char != '.' {
 				return true
@@ -33,6 +34,61 @@ func hasSymbol(lines []string, fromX int, toX int, fromY int, toY int) bool {
 		}
 	}
 	return false
+}
+
+func findNumberAtCoordinate(lines []string, x int, y int) (int, int) {
+	number := string(lines[y][x])
+	for xx := x - 1; xx >= 0; xx-- {
+		char := lines[y][xx]
+		if char >= '0' && char <= '9' {
+			number = string(char) + number
+		} else {
+			break
+		}
+	}
+	for x = x + 1; x < len(lines[y]); x++ {
+		char := lines[y][x]
+		if char >= '0' && char <= '9' {
+			number = number + string(char)
+		} else {
+			break
+		}
+	}
+	numberInt, _ := strconv.Atoi(number)
+	return numberInt, x
+}
+
+func gearRatio(lines []string, x int, y int) int {
+	numberOne := -1
+	numberTwo := -1
+	startY := y - 1
+	if startY < 0 {
+		startY = 0
+	}
+	startX := x - 1
+	if startX < 0 {
+		startX = 0
+	}
+	for yy := startY; yy <= y+1 && yy < len(lines); yy++ {
+		for xx := startX; xx <= x+1 && xx < len(lines[0]); xx++ {
+			if xx == x && yy == y {
+				continue
+			}
+			char := lines[yy][xx]
+			if char >= '0' && char <= '9' {
+				if numberOne == -1 {
+					numberOne, xx = findNumberAtCoordinate(lines, xx, yy)
+				} else if numberTwo == -1 {
+					numberTwo, xx = findNumberAtCoordinate(lines, xx, yy)
+					fmt.Printf("Number one: %v, number two: %v\n", numberOne, numberTwo)
+					// convert to int and return numbers
+					return numberOne * numberTwo
+				}
+			}
+		}
+	}
+
+	return -1
 }
 
 func partOne(lines []string, debug bool) {
@@ -49,7 +105,6 @@ func partOne(lines []string, debug bool) {
 				if eol {
 					checkForSymbol = true
 				}
-
 			} else if currentNumber != "" {
 				checkForSymbol = true
 			}
@@ -69,7 +124,19 @@ func partOne(lines []string, debug bool) {
 }
 
 func partTwo(lines []string, debug bool) {
-
+	sum := 0
+	for y, line := range lines {
+		for x, char := range line {
+			if char == '*' {
+				gearRatio := gearRatio(lines, x, y)
+				if gearRatio >= 0 {
+					fmt.Printf("Gear at %v,%v %v\n", x, y+1, gearRatio)
+					sum += gearRatio
+				}
+			}
+		}
+	}
+	fmt.Printf("Sum: %v\n", sum)
 }
 
 func main() {

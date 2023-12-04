@@ -35,7 +35,6 @@ func ReadInput(day int, args []string) ([]string, error) {
 	var inputFile string
 	if isTest {
 		if part == 1 {
-
 			inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.1.input", day))
 		} else {
 			inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.2.input", day))
@@ -46,7 +45,11 @@ func ReadInput(day int, args []string) ([]string, error) {
 
 	file, err := os.Open(inputFile)
 	if err != nil {
-		return nil, fmt.Errorf("error opening input file: %w", err)
+		inputFile = filepath.Join(".", "test_inputs", fmt.Sprintf("%d.input", day))
+		file, err = os.Open(inputFile)
+		if err != nil {
+			return nil, fmt.Errorf("error opening input file: %w", err)
+		}
 	}
 	defer file.Close()
 
