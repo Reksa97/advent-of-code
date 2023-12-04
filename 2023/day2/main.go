@@ -8,19 +8,10 @@ import (
 	"strings"
 )
 
-func main() {
-	day := 2
+func partOne(games []string, debug bool) {
 	redCubesAtStart := 12
 	greenCubesAtStart := 13
 	blueCubesAtStart := 14
-	games, err := common.ReadInput(day, os.Args)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	part := common.GetPart(os.Args)
-	debug := common.IsTestMode(os.Args)
-	fmt.Printf("Part: %v\n", part)
 	sum := 0
 	for _, game := range games {
 		split := strings.Split(game, ": ")
@@ -65,4 +56,60 @@ func main() {
 		}
 	}
 	fmt.Printf("Sum: %v\n", sum)
+}
+
+func partTwo(games []string, debug bool) {
+	sumOfPowers := 0
+	for _, game := range games {
+		minRedCubes := 0
+		minGreenCubes := 0
+		minBlueCubes := 0
+		split := strings.Split(game, ": ")
+		output := split[1]
+
+		draws := strings.Split(output, "; ")
+		for _, draw := range draws {
+			drawCubesAmountsAndColors := strings.Split(draw, ", ")
+
+			for _, amountAndColor := range drawCubesAmountsAndColors {
+				amountAndColorSplit := strings.Split(amountAndColor, " ")
+				amount, _ := strconv.Atoi(amountAndColorSplit[0])
+				color := amountAndColorSplit[1]
+				switch color {
+				case "red":
+					if amount > minRedCubes {
+						minRedCubes = amount
+					}
+				case "green":
+					if amount > minGreenCubes {
+						minGreenCubes = amount
+					}
+				case "blue":
+					if amount > minBlueCubes {
+						minBlueCubes = amount
+					}
+				}
+			}
+		}
+		power := minRedCubes * minGreenCubes * minBlueCubes
+		sumOfPowers += power
+	}
+	fmt.Printf("Sum of powers: %v\n", sumOfPowers)
+}
+
+func main() {
+	day := 2
+	games, err := common.ReadInput(day, os.Args)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	part := common.GetPart(os.Args)
+	debug := common.IsTestMode(os.Args)
+	fmt.Printf("Part: %v\n", part)
+	if part == 1 {
+		partOne(games, debug)
+	} else {
+		partTwo(games, debug)
+	}
 }
