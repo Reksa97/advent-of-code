@@ -4,18 +4,65 @@ import (
 	"aoc2023/common"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func main() {
 	day := 2
+	redCubesAtStart := 12
+	greenCubesAtStart := 13
+	blueCubesAtStart := 14
 	games, err := common.ReadInput(day, os.Args)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	part := common.GetPart(os.Args)
+	debug := common.IsTestMode(os.Args)
 	fmt.Printf("Part: %v\n", part)
+	sum := 0
 	for _, game := range games {
-		fmt.Println(game)
+		split := strings.Split(game, ": ")
+		gameId, _ := strconv.Atoi(strings.Split(split[0], "Game ")[1])
+		output := split[1]
+
+		draws := strings.Split(output, "; ")
+		validGame := true
+		for _, draw := range draws {
+			drawCubesAmountsAndColors := strings.Split(draw, ", ")
+			redCubes := redCubesAtStart
+			greenCubes := greenCubesAtStart
+			blueCubes := blueCubesAtStart
+			for _, amountAndColor := range drawCubesAmountsAndColors {
+				amountAndColorSplit := strings.Split(amountAndColor, " ")
+				amount, _ := strconv.Atoi(amountAndColorSplit[0])
+				color := amountAndColorSplit[1]
+				switch color {
+				case "red":
+					redCubes -= amount
+				case "green":
+					greenCubes -= amount
+				case "blue":
+					blueCubes -= amount
+				}
+			}
+			if redCubes < 0 || greenCubes < 0 || blueCubes < 0 {
+				if debug {
+					fmt.Println(gameId, output)
+					fmt.Printf("Game %v: %v\n", gameId, "invalid")
+				}
+				validGame = false
+				break
+			}
+		}
+		if validGame {
+			if debug {
+				fmt.Println(gameId, output)
+				fmt.Printf("Game %v: %v\n", gameId, "valid")
+			}
+			sum += gameId
+		}
 	}
+	fmt.Printf("Sum: %v\n", sum)
 }
