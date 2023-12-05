@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type MapName string
@@ -219,6 +220,7 @@ func partTwo(lines []string, debug bool) {
 }
 
 func main() {
+	startTimeBeforeParsingInput := time.Now()
 	day := 5
 	lines, err := common.ReadInput(day, os.Args)
 	if err != nil {
@@ -229,9 +231,17 @@ func main() {
 	debug := common.IsTestMode(os.Args)
 	fmt.Printf("Part: %v\n", part)
 
+	startTime := time.Now()
+
 	if part == 1 {
 		partOne(lines, debug)
 	} else {
 		partTwo(lines, debug)
 	}
+
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	durationWithParsingInput := endTime.Sub(startTimeBeforeParsingInput)
+	fmt.Printf("Execution time: %v μs (%v ms)\n", duration.Microseconds(), duration.Milliseconds())
+	fmt.Printf("Execution time including parsing input: %v μs (%v ms)\n", durationWithParsingInput.Microseconds(), durationWithParsingInput.Milliseconds())
 }
