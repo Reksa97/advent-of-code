@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+func ConvertToInt(values []string) []int {
+	var result []int
+	for _, value := range values {
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Error converting %v to int: %v", value, err))
+		}
+		result = append(result, intValue)
+	}
+	return result
+}
+
 func GetPart(args []string) int {
 	// Determine which part to run, default to Part 1
 	part := 1
