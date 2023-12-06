@@ -13,3 +13,9 @@ or use common test_inputs/1.input like this:
 ```
 go run day1/main.go [1|2] --test
 ```
+
+## Starting a new day
+
+```
+./generate_boilerplate.bash [day]
+```
