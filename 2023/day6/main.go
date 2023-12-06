@@ -19,7 +19,7 @@ func parseInput(lines []string, debug bool) ([]int, []int) {
 	return common.ConvertToInt(timeValues), common.ConvertToInt(distanceValues)
 }
 
-func partOne(lines []string, debug bool) {
+func solution(lines []string, debug bool) {
 	timeValues, distanceValues := parseInput(lines, debug)
 
 	result := 1
@@ -46,10 +46,6 @@ func partOne(lines []string, debug bool) {
 	fmt.Printf("Result: %v\n", result)
 }
 
-func partTwo(lines []string, debug bool) {
-
-}
-
 func main() {
 	day := 6
 	lines, err := common.ReadInput(day, os.Args)
@@ -61,13 +57,16 @@ func main() {
 	debug := common.IsTestMode(os.Args)
 	fmt.Printf("Part: %v\n", part)
 
+	if part == 2 {
+		// remove spaces from lines
+		for i := 0; i < len(lines); i++ {
+			lines[i] = strings.ReplaceAll(lines[i], " ", "")
+		}
+	}
+
 	startTime := time.Now()
 
-	if part == 1 {
-		partOne(lines, debug)
-	} else {
-		partTwo(lines, debug)
-	}
+	solution(lines, debug)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
