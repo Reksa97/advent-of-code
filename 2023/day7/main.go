@@ -66,8 +66,66 @@ func calculateHandType(cards string, debug bool) HandType {
 	return HighCard
 }
 
+func calculateHandTypePart2(cards string, debug bool) HandType {
+	cardMap := make(map[string]int)
+	for _, card := range cards {
+		cardMap[string(card)]++
+	}
+	if debug {
+		fmt.Println(cardMap)
+	}
+
+	jokerCount := cardMap["J"]
+	delete(cardMap, "J")
+
+	maxOfAKind := 0
+	maxOfAKindCard := ""
+	for card, amount := range cardMap {
+		if amount > maxOfAKind {
+			maxOfAKind = amount
+			maxOfAKindCard = card
+		}
+	}
+
+	if maxOfAKind == 0 && jokerCount == 5 {
+		maxOfAKind = 5
+		maxOfAKindCard = "A"
+	} else if jokerCount > 0 {
+		for _, amount := range cardMap {
+			if amount == maxOfAKind {
+				maxOfAKind += jokerCount
+				cardMap[maxOfAKindCard] += jokerCount
+				break
+			}
+		}
+	}
+
+	if maxOfAKind == 5 {
+		return FiveOfAKind
+	}
+	if maxOfAKind == 4 {
+		return FourOfAKind
+	}
+	if maxOfAKind == 3 {
+		if len(cardMap) == 2 {
+			return FullHouse
+		}
+		return ThreeOfAKind
+	}
+	if maxOfAKind == 2 {
+		if len(cardMap) == 3 {
+			return TwoPair
+		}
+		return OnePair
+	}
+
+	return HighCard
+
+}
+
 type ByHand []Hand
 
+var part = common.GetPart(os.Args)
 var cardValues = map[string]int{
 	"2": 2,
 	"3": 3,
@@ -79,6 +137,22 @@ var cardValues = map[string]int{
 	"9": 9,
 	"T": 10,
 	"J": 11,
+	"Q": 12,
+	"K": 13,
+	"A": 14,
+}
+
+var cardValuesPart2 = map[string]int{
+	"J": 1,
+	"2": 2,
+	"3": 3,
+	"4": 4,
+	"5": 5,
+	"6": 6,
+	"7": 7,
+	"8": 8,
+	"9": 9,
+	"T": 10,
 	"Q": 12,
 	"K": 13,
 	"A": 14,
@@ -101,6 +175,9 @@ func (a ByHand) Less(i, j int) bool {
 		jCard := string(jCards[cardIndex])
 
 		if iCard != jCard {
+			if part == 2 {
+				return cardValuesPart2[iCard] < cardValuesPart2[jCard]
+			}
 			return cardValues[iCard] < cardValues[jCard]
 		}
 	}
@@ -131,7 +208,25 @@ func partOne(lines []string, debug bool) {
 }
 
 func partTwo(lines []string, debug bool) {
+	hands := make([]Hand, len(lines))
+	for i, line := range lines {
+		values := strings.Fields(line)
+		cards := values[0]
+		bid, _ := strconv.Atoi(values[1])
+		hands[i] = Hand{cards, calculateHandTypePart2(cards, debug), bid}
+	}
 
+	sort.Sort(ByHand(hands))
+	totalWinnings := 0
+	for i, hand := range hands {
+		rank := i + 1
+		winnings := hand.bid * rank
+		totalWinnings += winnings
+		if debug {
+			fmt.Printf("Hand %v: %v, %v, %v, %v\n", rank, hand.cards, hand.handType, hand.bid, winnings)
+		}
+	}
+	fmt.Printf("Total winnings: %v\n", totalWinnings)
 }
 
 func main() {
@@ -141,7 +236,7 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	part := common.GetPart(os.Args)
+
 	debug := common.IsTestMode(os.Args)
 	fmt.Printf("Part: %v\n", part)
 
