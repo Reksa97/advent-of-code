@@ -7,11 +7,14 @@ import (
 	"time"
 )
 
-func partOne(lines []string, debug bool) {
+var part = common.GetPart(os.Args)
+var debug = common.IsTestMode(os.Args)
+
+func partOne(lines []string) {
 
 }
 
-func partTwo(lines []string, debug bool) {
+func partTwo(lines []string) {
 
 }
 
@@ -22,16 +25,14 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	part := common.GetPart(os.Args)
-	debug := common.IsTestMode(os.Args)
 	fmt.Printf("Part: %v\n", part)
 
 	startTime := time.Now()
 
 	if part == 1 {
-		partOne(lines, debug)
+		partOne(lines)
 	} else {
-		partTwo(lines, debug)
+		partTwo(lines)
 	}
 
 	endTime := time.Now()
