@@ -64,7 +64,55 @@ func partOne(lines []string) {
 }
 
 func partTwo(lines []string) {
+	sumOfPreviousValues := 0
+	for _, history := range lines {
+		differences := [][]int{}
+		historyValuesString := strings.Fields(history)
+		historyValues := common.ConvertToInt(historyValuesString)
+		values := historyValues
+		historyLength := len(values)
+		for i := 0; i < historyLength; i++ {
+			if debug {
+				fmt.Printf("i: %v/%v\n", i, len(values))
+			}
+			differences = append(differences, []int{})
+			everythingIsZero := true
+			previous := values[0]
+			for _, value := range values[1:] {
+				difference := value - previous
+				differences[i] = append(differences[i], difference)
+				if difference != 0 {
+					everythingIsZero = false
+				}
+				previous = value
+			}
+			if everythingIsZero {
+				if debug {
+					fmt.Printf("everything is zero, differences[%v]: %v\n", i, differences[i])
+				}
+				break
+			}
+			values = differences[i]
+		}
+		if debug {
+			fmt.Printf("differences: %v\n", differences)
+		}
 
+		lastIndex := len(differences) - 1
+		decrement := differences[lastIndex][0]
+		for i := len(differences) - 2; i >= 0; i-- {
+			decrement = differences[i][0] - decrement
+			if debug {
+				fmt.Printf("i: %v, decrement: %v\n", i, decrement)
+			}
+		}
+		previousValue := historyValues[0] - decrement
+		sumOfPreviousValues += previousValue
+		if debug {
+			fmt.Printf("sumOfPreviousValues: %v (+%v)\n", sumOfPreviousValues, previousValue)
+		}
+	}
+	fmt.Printf("Answer: %v\n", sumOfPreviousValues)
 }
 
 func main() {
