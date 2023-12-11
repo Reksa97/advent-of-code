@@ -14,53 +14,43 @@ type Galaxy struct {
 	x, y int
 }
 
-func parseInput(lines []string) ([]string, []Galaxy) {
-	originalLinesLenght := len(lines)
-	addedLines := 0
-	for y := 0; y < originalLinesLenght; y++ {
-		actualY := y + addedLines
+func parseInput(lines []string) ([]Galaxy, []bool, []bool) {
+	expandedLines := make([]bool, len(lines))
+	expandedColumns := make([]bool, len(lines[0]))
+	for y := 0; y < len(lines); y++ {
 		if debug {
-			fmt.Printf("Line %v (%v): %v\n", y, actualY, lines[actualY])
+			fmt.Printf("Line %v: %v\n", y, lines[y])
 		}
 		isEmpty := true
-		for _, char := range lines[actualY] {
+		for _, char := range lines[y] {
 			if char == '#' {
 				isEmpty = false
 			}
 		}
 		if isEmpty {
 			if debug {
-				fmt.Printf("Line %v is empty\n", actualY)
+				fmt.Printf("Line %v is empty\n", y)
 			}
-			// duplicate current line
-			lines = append(lines, "")
-			copy(lines[actualY+1:], lines[actualY:])
-			addedLines++
+			expandedLines[y] = true
 		}
 	}
 
-	originalColumnsLenght := len(lines[0])
-	addedColumns := 0
-	for x := 0; x < originalColumnsLenght; x++ {
-		actualX := x + addedColumns
+	for x := 0; x < len(lines[0]); x++ {
 
 		isEmpty := true
 		for y := 0; y < len(lines); y++ {
-			if lines[y][actualX] == '#' {
+			if lines[y][x] == '#' {
 				isEmpty = false
 			}
 		}
 		if isEmpty {
 			if debug {
-				fmt.Printf("Column %v is empty\n", actualX)
+				fmt.Printf("Column %v is empty\n", x)
 				for _, line := range lines {
-					fmt.Printf("	%v\n", string(line[actualX]))
+					fmt.Printf("	%v\n", string(line[x]))
 				}
 			}
-			for y := 0; y < len(lines); y++ {
-				lines[y] = lines[y][:actualX] + "." + lines[y][actualX:]
-			}
-			addedColumns++
+			expandedColumns[x] = true
 		}
 	}
 
@@ -79,11 +69,15 @@ func parseInput(lines []string) ([]string, []Galaxy) {
 		}
 		fmt.Println(galaxies)
 	}
-	return lines, galaxies
+	return galaxies, expandedColumns, expandedLines
 }
 
-func partOne(lines []string) {
-	lines, galaxies := parseInput(lines)
+func solve(lines []string) {
+	EXPAND_MULTIPLIER := 2
+	if part == 2 {
+		EXPAND_MULTIPLIER = 1_000_000
+	}
+	galaxies, expandedColumns, expandedLines := parseInput(lines)
 	sumOfDistances := 0
 	for i, galaxy := range galaxies {
 		if debug {
@@ -93,15 +87,39 @@ func partOne(lines []string) {
 			if debug {
 				fmt.Printf("	%v: %v\n", j, otherGalaxy)
 			}
-			absX := galaxy.x - otherGalaxy.x
-			if absX < 0 {
-				absX = -absX
+			xDirection := 1
+			if otherGalaxy.x < galaxy.x {
+				xDirection = -1
 			}
-			absY := galaxy.y - otherGalaxy.y
-			if absY < 0 {
-				absY = -absY
+			yDirection := 1
+			if otherGalaxy.y < galaxy.y {
+				yDirection = -1
 			}
-			shortestPath := absX + absY
+			shortestPath := 0
+			if galaxy.x != otherGalaxy.x {
+				for x := galaxy.x + xDirection; x != otherGalaxy.x; x += xDirection {
+					if debug {
+						fmt.Printf("		%v\n", x)
+					}
+					if !expandedColumns[x] {
+						shortestPath++
+					} else {
+						shortestPath += EXPAND_MULTIPLIER
+					}
+				}
+				shortestPath++
+			}
+			if galaxy.y != otherGalaxy.y {
+				for y := galaxy.y + yDirection; y != otherGalaxy.y; y += yDirection {
+					if !expandedLines[y] {
+						shortestPath++
+					} else {
+						shortestPath += EXPAND_MULTIPLIER
+					}
+				}
+				shortestPath++
+			}
+
 			if debug {
 				fmt.Printf("		%v\n", shortestPath)
 			}
@@ -109,10 +127,6 @@ func partOne(lines []string) {
 		}
 	}
 	fmt.Printf("Sum of distances: %v\n", sumOfDistances)
-}
-
-func partTwo(lines []string) {
-
 }
 
 func main() {
@@ -126,11 +140,7 @@ func main() {
 
 	startTime := time.Now()
 
-	if part == 1 {
-		partOne(lines)
-	} else {
-		partTwo(lines)
-	}
+	solve(lines)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
