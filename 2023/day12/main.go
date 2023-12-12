@@ -11,13 +11,14 @@ import (
 var part = common.GetPart(os.Args)
 var debug = common.IsTestMode(os.Args)
 
+var cache = make(map[string]int)
+
 func countPossibleArrangements(conditions string, pattern []int, patternIndex int, adjacentDamagedCount int, previousConditions string) int {
 
-	/* if debug {
-		fmt.Printf("\nConditions: %v|%v\n", previousConditions, conditions)
-		fmt.Printf("Pattern index: %v\n", patternIndex)
-		fmt.Printf("Adjacent damaged count: %v\n", adjacentDamagedCount)
-	} */
+	cacheKey := fmt.Sprintf("%v:%v:%v", conditions, patternIndex, adjacentDamagedCount)
+	if cachedValue, ok := cache[cacheKey]; ok {
+		return cachedValue
+	}
 
 	if len(conditions) == 0 {
 		if (patternIndex == len(pattern)-1 && adjacentDamagedCount == pattern[patternIndex]) || (patternIndex == len(pattern) && adjacentDamagedCount == 0) {
@@ -26,6 +27,7 @@ func countPossibleArrangements(conditions string, pattern []int, patternIndex in
 		return 0
 	}
 
+	returnValue := 0
 	switch conditions[0] {
 	case '.':
 		// operational
@@ -37,28 +39,38 @@ func countPossibleArrangements(conditions string, pattern []int, patternIndex in
 		if (patternIndex < len(pattern)) && (pattern[patternIndex] == adjacentDamagedCount && adjacentDamagedCount > 0) {
 			newPatternIndex++
 		}
-		return countPossibleArrangements(conditions[1:], pattern, newPatternIndex, 0, previousConditions+".")
+		returnValue = countPossibleArrangements(conditions[1:], pattern, newPatternIndex, 0, previousConditions+".")
 	case '#':
 		// damaged
 		if patternIndex >= len(pattern) || pattern[patternIndex] == adjacentDamagedCount {
 			// no more damaged sequences allowed or too many damaged next to each other
 			return 0
 		}
-		return countPossibleArrangements(conditions[1:], pattern, patternIndex, adjacentDamagedCount+1, previousConditions+"#")
+		returnValue = countPossibleArrangements(conditions[1:], pattern, patternIndex, adjacentDamagedCount+1, previousConditions+"#")
 	case '?':
 		// unknown
-		return countPossibleArrangements("."+conditions[1:], pattern, patternIndex, adjacentDamagedCount, previousConditions) +
+		returnValue = countPossibleArrangements("."+conditions[1:], pattern, patternIndex, adjacentDamagedCount, previousConditions) +
 			countPossibleArrangements("#"+conditions[1:], pattern, patternIndex, adjacentDamagedCount, previousConditions)
 	}
-	panic(fmt.Sprintf("Unknown condition: %v", conditions[0]))
+	cache[cacheKey] = returnValue
+	return returnValue
 }
 
-func partOne(lines []string) {
+func solve(lines []string) {
 	totalArrangements := 0
 	for _, line := range lines {
+		cache = make(map[string]int)
 		fields := strings.Fields(line)
 		conditions := fields[0]
 		pattern := common.ConvertToInt(strings.Split(fields[1], ","))
+		if part == 2 {
+			conditions = conditions + "?" + conditions + "?" + conditions + "?" + conditions + "?" + conditions
+			originalPattern := pattern
+			pattern = append(pattern, originalPattern...)
+			pattern = append(pattern, originalPattern...)
+			pattern = append(pattern, originalPattern...)
+			pattern = append(pattern, originalPattern...)
+		}
 		if debug {
 			fmt.Printf("New line Conditions: %v\n", conditions)
 			fmt.Printf("New line Pattern: %v\n", pattern)
@@ -72,10 +84,6 @@ func partOne(lines []string) {
 	fmt.Printf("Total arrangements: %v\n", totalArrangements)
 }
 
-func partTwo(lines []string) {
-
-}
-
 func main() {
 	day := 12
 	lines, err := common.ReadInput(day, os.Args)
@@ -87,11 +95,7 @@ func main() {
 
 	startTime := time.Now()
 
-	if part == 1 {
-		partOne(lines)
-	} else {
-		partTwo(lines)
-	}
+	solve(lines)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
