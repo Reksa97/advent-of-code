@@ -4,6 +4,7 @@ import (
 	"aoc2023/common"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ func hash(str string) int {
 		divided := multiplied / 256
 		currentValue = multiplied - divided*256
 
-		if debug {
+		if debug && part == 1 {
 			fmt.Printf("\n%v (%v - %v*256) %v", char, multiplied, divided, currentValue)
 		}
 	}
@@ -39,8 +40,77 @@ func partOne(lines []string) {
 	fmt.Println(sum)
 }
 
-func partTwo(lines []string) {
+type Lens struct {
+	label string
+	value int
+}
 
+func partTwo(lines []string) {
+	statements := strings.Split(lines[0], ",")
+	// 256 boxes
+	boxes := make([][]Lens, 256)
+	for _, statement := range statements {
+		statementSplit := strings.Split(statement, "=")
+		label := ""
+		if len(statementSplit) == 1 {
+			operation := statement[len(statement)-1]
+			label = statement[:len(statement)-1]
+			boxIndex := hash(label)
+			for i, box := range boxes[boxIndex] {
+				if box.label == label {
+					// remove item from boxes[boxIndex] if lens with the label is in the box
+					// and the operation is -
+					if operation == '-' {
+						boxes[boxIndex] = append(boxes[boxIndex][:i], boxes[boxIndex][i+1:]...)
+					}
+					break
+				}
+			}
+
+			if debug {
+				fmt.Printf("\nbox:%v, op:%v label:%v\n", boxIndex, string(operation), label)
+			}
+			continue
+		}
+		label = statementSplit[0]
+		boxIndex := hash(label)
+		value, _ := strconv.Atoi(statementSplit[1])
+		foundAndReplaced := false
+		newLens := Lens{label: label, value: value}
+		for i, box := range boxes[boxIndex] {
+			if box.label == label {
+				// replace item in boxes[boxIndex] if lens with the label is in the box
+				firstHalf := append(boxes[boxIndex][:i], newLens)
+				boxes[boxIndex] = append(firstHalf, boxes[boxIndex][i+1:]...)
+				foundAndReplaced = true
+				break
+			}
+		}
+		if !foundAndReplaced {
+			boxes[boxIndex] = append(boxes[boxIndex], newLens)
+		}
+		if debug {
+			fmt.Printf("\nbox:%v, %v = %v\n", boxIndex, label, value)
+			for i, box := range boxes {
+				if len(box) > 0 {
+					fmt.Println(i, box)
+				}
+			}
+		}
+	}
+	focusingPower := 0
+	for i, box := range boxes {
+		if len(box) > 0 {
+			if debug {
+				fmt.Println(i, box)
+			}
+			for j, lens := range box {
+				lensPower := (1 + i) * (1 + j) * lens.value
+				focusingPower += lensPower
+			}
+		}
+	}
+	fmt.Println(focusingPower)
 }
 
 func main() {
