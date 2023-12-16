@@ -80,7 +80,7 @@ func goTo(x int, y int, direction string, lines []string, visited [][]map[string
 	}
 }
 
-func partOne(lines []string) {
+func partOne(lines []string, firstX int, firstY int, firstDirection string) int {
 	visited := make([][]map[string]bool, len(lines))
 	for i, line := range lines {
 		if debug {
@@ -95,35 +95,72 @@ func partOne(lines []string) {
 		visited[i] = append(visited[i], arrayOfMaps...)
 	}
 
-	goTo(0, 0, ">", lines, visited)
+	goTo(firstX, firstY, firstDirection, lines, visited)
 
 	energized := 0
 
 	for _, line := range visited {
 		for _, cell := range line {
 			if len(cell) > 0 {
-				fmt.Printf("#")
+				if debug {
+					fmt.Printf("#")
+				}
+
 				energized++
-			} else {
+			} else if debug {
 				fmt.Printf(".")
 			}
 		}
-		fmt.Printf("\n")
+		if debug {
+			fmt.Printf("\n")
+		}
 	}
-	fmt.Printf("\n")
-
 	if debug {
+		fmt.Printf("\n")
 		for _, line := range lines {
 			fmt.Println(line)
 		}
 	}
 
-	fmt.Printf("Energized: %v\n", energized)
-
+	if part == 1 {
+		fmt.Printf("Energized: %v\n", energized)
+	}
+	return energized
 }
 
 func partTwo(lines []string) {
-
+	originalLines := make([]string, len(lines))
+	copy(originalLines, lines)
+	maximumEnergized := 0
+	for x := 0; x < len(lines[0]); x++ {
+		lines = make([]string, len(originalLines))
+		copy(lines, originalLines)
+		energized := partOne(lines, x, 0, "v")
+		if energized > maximumEnergized {
+			maximumEnergized = energized
+		}
+		lines = make([]string, len(originalLines))
+		copy(lines, originalLines)
+		energized = partOne(lines, x, len(lines)-1, "^")
+		if energized > maximumEnergized {
+			maximumEnergized = energized
+		}
+	}
+	for y := 0; y < len(lines); y++ {
+		lines = make([]string, len(originalLines))
+		copy(lines, originalLines)
+		energized := partOne(lines, 0, y, ">")
+		if energized > maximumEnergized {
+			maximumEnergized = energized
+		}
+		lines = make([]string, len(originalLines))
+		copy(lines, originalLines)
+		energized = partOne(lines, len(lines[0])-1, y, "<")
+		if energized > maximumEnergized {
+			maximumEnergized = energized
+		}
+	}
+	fmt.Printf("Maximum energized: %v\n", maximumEnergized)
 }
 
 func main() {
@@ -138,7 +175,7 @@ func main() {
 	startTime := time.Now()
 
 	if part == 1 {
-		partOne(lines)
+		partOne(lines, 0, 0, ">")
 	} else {
 		partTwo(lines)
 	}
