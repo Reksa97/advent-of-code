@@ -31,7 +31,7 @@ func ShoelaceArea(vertices []Vertex) int {
 	return int(math.Abs(area) / 2.0)
 }
 
-func partOne(lines []string) {
+func solve(lines []string) {
 	vertices := make([]Vertex, len(lines)+1)
 	i := 0
 	x := 0
@@ -43,6 +43,26 @@ func partOne(lines []string) {
 		parts := strings.Fields(line)
 		direction := parts[0]
 		distance, _ := strconv.Atoi(parts[1])
+		if part == 2 {
+			lastField := parts[2][1 : len(parts[2])-1]
+			directionInt := lastField[len(lastField)-1:]
+			hex := lastField[1 : len(lastField)-1]
+			hexAsInt, _ := strconv.ParseInt(hex, 16, 64)
+			distance = int(hexAsInt)
+			if debug {
+				fmt.Printf("Hex: %v (%v), direction: %v\n", hex, hexAsInt, directionInt)
+			}
+			switch directionInt {
+			case "0":
+				direction = "R"
+			case "1":
+				direction = "D"
+			case "2":
+				direction = "L"
+			case "3":
+				direction = "U"
+			}
+		}
 		switch direction {
 		case "U":
 			y += distance
@@ -71,10 +91,6 @@ func partOne(lines []string) {
 	fmt.Printf("Result: %v\n", interiorPoints+edgeArea)
 }
 
-func partTwo(lines []string) {
-
-}
-
 func main() {
 	day := 18
 	lines, err := common.ReadInput(day, os.Args)
@@ -86,11 +102,7 @@ func main() {
 
 	startTime := time.Now()
 
-	if part == 1 {
-		partOne(lines)
-	} else {
-		partTwo(lines)
-	}
+	solve(lines)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
