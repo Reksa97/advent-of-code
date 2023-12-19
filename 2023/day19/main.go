@@ -20,11 +20,22 @@ type Rating struct {
 }
 
 type Rule struct {
-	variable   string
-	operator   string
-	value      int
-	goTo       string
-	alwaysGoTo bool
+	variable              string
+	operator              string
+	value                 int
+	destination           string
+	alwaysGoToDestination bool
+}
+
+type RatingRange struct {
+	minX int
+	maxX int
+	minM int
+	maxM int
+	minA int
+	maxA int
+	minS int
+	maxS int
 }
 
 func isAccepted(rating Rating, workflows map[string][]Rule) bool {
@@ -49,8 +60,8 @@ func isAccepted(rating Rating, workflows map[string][]Rule) bool {
 			if debug {
 				fmt.Printf("Rule: %v\n", rule)
 			}
-			if rule.alwaysGoTo {
-				currentWorkflowName = rule.goTo
+			if rule.alwaysGoToDestination {
+				currentWorkflowName = rule.destination
 				break
 			}
 			value := 0
@@ -72,7 +83,7 @@ func isAccepted(rating Rating, workflows map[string][]Rule) bool {
 					fmt.Printf("Value: %v < rule.value: %v = %v\n", value, rule.value, value < rule.value)
 				}
 				if value < rule.value {
-					currentWorkflowName = rule.goTo
+					currentWorkflowName = rule.destination
 					foundTrue = true
 					if debug {
 						fmt.Printf("New workflow: %v\n", currentWorkflowName)
@@ -85,10 +96,10 @@ func isAccepted(rating Rating, workflows map[string][]Rule) bool {
 				}
 				if value > rule.value {
 					if debug {
-						fmt.Printf("New workflow: %v\n", rule.goTo)
+						fmt.Printf("New workflow: %v\n", rule.destination)
 					}
 					foundTrue = true
-					currentWorkflowName = rule.goTo
+					currentWorkflowName = rule.destination
 					break
 				}
 			default:
@@ -109,12 +120,12 @@ func parseRule(ruleString string) Rule {
 	rule.variable = parts[0][0:1]
 	rule.operator = parts[0][1:2]
 	rule.value, _ = strconv.Atoi(parts[0][2:])
-	rule.goTo = parts[1]
+	rule.destination = parts[1]
 
 	return rule
 }
 
-func partOne(lines []string) {
+func parseWorkflows(lines []string) (map[string][]Rule, int) {
 	workflows := make(map[string][]Rule)
 	ratingStartIndex := 0
 	for i, workflowLine := range lines {
@@ -139,7 +150,7 @@ func partOne(lines []string) {
 		for true {
 			if workflowLine[i] == '}' {
 				workflow := workflows[workflowName]
-				workflow = append(workflow, Rule{goTo: currentRule, alwaysGoTo: true})
+				workflow = append(workflow, Rule{destination: currentRule, alwaysGoToDestination: true})
 				workflows[workflowName] = workflow
 				break
 			}
@@ -154,6 +165,11 @@ func partOne(lines []string) {
 			i++
 		}
 	}
+	return workflows, ratingStartIndex
+}
+
+func partOne(lines []string) {
+	workflows, ratingStartIndex := parseWorkflows(lines)
 
 	sumOfAcceptedRatings := 0
 	for _, line := range lines[ratingStartIndex:] {
@@ -184,8 +200,164 @@ func partOne(lines []string) {
 	fmt.Printf("Sum of accepted ratings: %v\n", sumOfAcceptedRatings)
 }
 
-func partTwo(lines []string) {
+func getCountOfAcceptedRatings(ratingRange RatingRange, workflows map[string][]Rule, workflowName string) int {
+	if workflowName == "R" {
+		return 0
+	}
+	if workflowName == "A" {
+		count := (ratingRange.maxX - ratingRange.minX + 1) * (ratingRange.maxM - ratingRange.minM + 1) * (ratingRange.maxA - ratingRange.minA + 1) * (ratingRange.maxS - ratingRange.minS + 1)
+		return count
+	}
+	if debug {
+		fmt.Printf("Current workflow: %v range:%v\n", workflowName, ratingRange)
+	}
+	workflow := workflows[workflowName]
+	for _, rule := range workflow {
+		if rule.alwaysGoToDestination {
+			return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+		}
 
+		switch rule.variable {
+		case "x":
+			if rule.operator == "<" {
+				if ratingRange.maxX < rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.minX < rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.maxX = rule.value - 1
+					ratingRange.minX = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else if rule.operator == ">" {
+				if ratingRange.minX > rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.maxX > rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.minX = rule.value + 1
+					ratingRange.maxX = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else {
+				panic(fmt.Sprintf("Unknown operator: %v", rule.operator))
+			}
+		case "m":
+			if rule.operator == "<" {
+				if ratingRange.maxM < rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.minM < rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.maxM = rule.value - 1
+					ratingRange.minM = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else if rule.operator == ">" {
+				if ratingRange.minM > rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.maxM > rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.minM = rule.value + 1
+					ratingRange.maxM = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else {
+				panic(fmt.Sprintf("Unknown operator: %v", rule.operator))
+			}
+		case "a":
+			if rule.operator == "<" {
+				if ratingRange.maxA < rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.minA < rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.maxA = rule.value - 1
+					ratingRange.minA = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else if rule.operator == ">" {
+				if ratingRange.minA > rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.maxA > rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.minA = rule.value + 1
+					ratingRange.maxA = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else {
+				panic(fmt.Sprintf("Unknown operator: %v", rule.operator))
+			}
+		case "s":
+			if rule.operator == "<" {
+				if ratingRange.maxS < rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.minS < rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.maxS = rule.value - 1
+					ratingRange.minS = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else if rule.operator == ">" {
+				if ratingRange.minS > rule.value {
+					// whole range goes to destination
+					return getCountOfAcceptedRatings(ratingRange, workflows, rule.destination)
+				} else if ratingRange.maxS > rule.value {
+					// only a part of the range goes to destination
+					newRange := ratingRange
+					newRange.minS = rule.value + 1
+					ratingRange.maxS = rule.value
+					return getCountOfAcceptedRatings(newRange, workflows, rule.destination) + getCountOfAcceptedRatings(ratingRange, workflows, workflowName)
+				} else {
+					// try next rule
+				}
+			} else {
+				panic(fmt.Sprintf("Unknown operator: %v", rule.operator))
+			}
+		}
+	}
+	panic(fmt.Sprintf("No rule found for workflow: %v", workflowName))
+}
+
+func partTwo(lines []string) {
+	workflows, _ := parseWorkflows(lines)
+	initialRange := RatingRange{
+		minX: 1,
+		maxX: 4000,
+		minM: 1,
+		maxM: 4000,
+		minA: 1,
+		maxA: 4000,
+		minS: 1,
+		maxS: 4000,
+	}
+
+	countOfAcceptedRatings := getCountOfAcceptedRatings(initialRange, workflows, "in")
+	fmt.Printf("Count of accepted ratings: %v\n", countOfAcceptedRatings)
 }
 
 func main() {
