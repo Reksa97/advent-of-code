@@ -87,7 +87,7 @@ func parseInput(lines []string) ([]string, map[string]FlipFlop, map[string]Conju
 	return broadcaster, flipFlops, conjunctions
 }
 
-func pressButton(broadcaster []string, flipFlops map[string]FlipFlop, conjunctions map[string]Conjunction) {
+func pressButton(broadcaster []string, flipFlops map[string]FlipFlop, conjunctions map[string]Conjunction, findCyclesFor map[string]bool) map[string]bool {
 	queue := make([]Pulse, 0)
 	// First button sends low pulse to broadcaster
 	totalLowPulses++
@@ -108,6 +108,13 @@ func pressButton(broadcaster []string, flipFlops map[string]FlipFlop, conjunctio
 				fmt.Println("Send -high to", pulse.target)
 			}
 			totalHighPulses++
+			if pulse.target == "dr" {
+				if _, ok := findCyclesFor[pulse.source]; ok {
+					findCyclesFor[pulse.source] = true
+					//fmt.Println("Cycle found for", pulse.source, "send -high to", pulse.target, findCyclesFor)
+				}
+			}
+
 		} else {
 			if debug {
 				fmt.Println("Send -low to", pulse.target)
@@ -144,6 +151,7 @@ func pressButton(broadcaster []string, flipFlops map[string]FlipFlop, conjunctio
 					break
 				}
 			}
+
 			for _, target := range conjunction.targets {
 				queue = append(queue, Pulse{conjunction.name, target, !allInputsHigh})
 			}
@@ -157,6 +165,7 @@ func pressButton(broadcaster []string, flipFlops map[string]FlipFlop, conjunctio
 		fmt.Println("High pulses", totalHighPulses)
 		fmt.Println()
 	}
+	return findCyclesFor
 }
 
 var totalLowPulses = 0
@@ -165,7 +174,7 @@ var totalHighPulses = 0
 func partOne(lines []string) {
 	broadcaster, flipFlops, conjunctions := parseInput(lines)
 	for i := 0; i < 1000; i++ {
-		pressButton(broadcaster, flipFlops, conjunctions)
+		pressButton(broadcaster, flipFlops, conjunctions, make(map[string]bool))
 	}
 	answer := totalHighPulses * totalLowPulses
 	fmt.Printf("Total low pulses: %v\n", totalLowPulses)
@@ -174,8 +183,105 @@ func partOne(lines []string) {
 	fmt.Printf("Answer: %v\n", answer)
 }
 
-func partTwo(lines []string) {
+type Cycle struct {
+	previousIndex int
+	length        int
+}
 
+func partTwo(lines []string) {
+	broadcaster, flipFlops, conjunctions := parseInput(lines)
+
+	levels := 4
+	previousState := make([][]int, levels)
+	rxLevels := make([][]string, levels)
+	rxLevels[0] = []string{"rx"}
+
+	for level := 1; level < levels; level++ {
+		rxLevels[level] = make([]string, 0)
+		previousState[level] = make([]int, 0)
+		for _, conjunction := range conjunctions {
+			for _, target := range conjunction.targets {
+				for _, levelTarget := range rxLevels[level-1] {
+					if target == levelTarget {
+						rxLevels[level] = append(rxLevels[level], conjunction.name)
+						previousState[level] = append(previousState[level], 0)
+					}
+				}
+			}
+		}
+		for _, flipFlop := range flipFlops {
+			for _, target := range flipFlop.targets {
+				for _, levelTarget := range rxLevels[level-1] {
+					if target == levelTarget {
+						fmt.Printf("Flip-flop %v found on level %v\n", flipFlop.name, level)
+						panic("Wrong assumption: Flip-flop found on level")
+					}
+				}
+			}
+		}
+	}
+
+	if len(rxLevels[1]) != 1 || len(rxLevels[2]) != 4 || len(rxLevels[3]) != 4 {
+		fmt.Println(rxLevels)
+		panic("Wrong assumptions about conjunctions leading to rx")
+	}
+
+	findCyclesFor := make(map[string]bool)
+	cycles := make(map[string]Cycle)
+	for _, conjunction := range rxLevels[2] {
+		findCyclesFor[conjunction] = false
+		cycles[conjunction] = Cycle{0, 0}
+	}
+
+	fmt.Println(rxLevels, findCyclesFor)
+
+	firstAllFoundIndex := 0
+	for i := 1; true; i++ {
+		ccFindCyclesFor := make(map[string]bool)
+		for conjunction := range findCyclesFor {
+			ccFindCyclesFor[conjunction] = false
+		}
+		foundCyclesFor := pressButton(broadcaster, flipFlops, conjunctions, ccFindCyclesFor)
+		for conjunction, found := range foundCyclesFor {
+			if found {
+				if cycles[conjunction].length == 0 {
+					fmt.Println("Cycle found for", conjunction, "at", i, "length", i)
+					cycles[conjunction] = Cycle{i, i}
+				} else if cycles[conjunction].previousIndex != i-cycles[conjunction].length {
+					fmt.Println("Cycle changed for", conjunction, "at", i, "length", i-cycles[conjunction].previousIndex)
+					cycles[conjunction] = Cycle{i, i - cycles[conjunction].previousIndex}
+					panic("Cycle changed")
+				} else {
+					cycles[conjunction] = Cycle{i, cycles[conjunction].length}
+				}
+			}
+		}
+		allFound := true
+
+		for _, cycle := range cycles {
+			if cycle.length == 0 {
+				allFound = false
+				break
+			}
+		}
+
+		if allFound && firstAllFoundIndex == 0 {
+			firstAllFoundIndex = i
+			fmt.Println("All cycles found at", i)
+		}
+
+		if firstAllFoundIndex > 0 && i > firstAllFoundIndex*4 {
+			fmt.Println("Just made sure the loops stay as they were... at", i)
+			break
+		}
+	}
+	cyclesAsIntArray := make([]int, 0)
+	for _, cycle := range cycles {
+		cyclesAsIntArray = append(cyclesAsIntArray, cycle.length)
+	}
+	answer := common.LcmArray(cyclesAsIntArray)
+
+	fmt.Printf("Answer: %v\n", answer)
 }
 
 func main() {

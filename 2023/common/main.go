@@ -8,6 +8,28 @@ import (
 	"strconv"
 )
 
+// Function to calculate GCD
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+// Function to calculate LCM of two numbers
+func lcm(a, b int) int {
+	return a * b / gcd(a, b)
+}
+
+// Function to calculate LCM of an array of integers
+func LcmArray(arr []int) int {
+	result := arr[0]
+	for i := 1; i < len(arr); i++ {
+		result = lcm(result, arr[i])
+	}
+	return result
+}
+
 func ConvertToInt(values []string) []int {
 	var result []int
 	for _, value := range values {
