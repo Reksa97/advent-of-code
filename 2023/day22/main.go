@@ -23,6 +23,7 @@ type Brick struct {
 	foundItsPlace bool
 	directlyAbove []int
 	directlyBelow []int
+	deleted       bool
 }
 
 /* func isBlocking(fallingBrick Brick, otherBrick Brick) bool {
@@ -46,7 +47,7 @@ func isBlocking(fallingBrick Brick, otherBrick Brick) bool {
 	return false
 }
 
-func partOne(lines []string) {
+func solve(lines []string) {
 	bricks := make([]Brick, 0)
 	for _, line := range lines {
 		split := strings.Split(line, "~")
@@ -54,7 +55,7 @@ func partOne(lines []string) {
 		endSplit := common.ConvertToInt(strings.Split(split[1], ","))
 		start := Coordinate{startSplit[0], startSplit[1], startSplit[2]}
 		end := Coordinate{endSplit[0], endSplit[1], endSplit[2]}
-		brick := Brick{start, end, false, make([]int, 0), make([]int, 0)}
+		brick := Brick{start, end, false, make([]int, 0), make([]int, 0), false}
 		if start.x > end.x || start.y > end.y || start.z > end.z {
 			panic("wrong expected input")
 		}
@@ -136,51 +137,90 @@ func partOne(lines []string) {
 	}
 	fmt.Println()
 	couldBeRemovedCount := 0
+	couldNotBeRemoved := make(map[int][]int, 0)
 	for i, brick := range bricks {
-		if debug {
-			fmt.Println("go through bricks", i, brick)
-		}
 		if len(brick.directlyAbove) == 0 {
 			couldBeRemovedCount++
 			if debug {
 				fmt.Println("could be removed, no above bricks", i, brick)
 			}
-		} else {
-			allAboveBricksHaveAnotherSupport := true
-			for _, aboveIndex := range brick.directlyAbove {
-				hasAnotherSupport := false
-				for _, belowIndex := range bricks[aboveIndex].directlyBelow {
-					if belowIndex != i {
-						hasAnotherSupport = true
-						break
-					}
-				}
-
-				if !hasAnotherSupport {
-					allAboveBricksHaveAnotherSupport = false
+			continue
+		}
+		wouldFall := make([]int, 0)
+		for _, aboveIndex := range brick.directlyAbove {
+			hasAnotherSupport := false
+			for _, belowIndex := range bricks[aboveIndex].directlyBelow {
+				if belowIndex != i {
+					hasAnotherSupport = true
 					break
 				}
 			}
-			if allAboveBricksHaveAnotherSupport {
-				couldBeRemovedCount++
-				if debug {
-					fmt.Println("could be removed, all above have support", i, brick)
-				}
+
+			if !hasAnotherSupport {
+				wouldFall = append(wouldFall, aboveIndex)
+			}
+		}
+		if len(wouldFall) == 0 {
+			couldBeRemovedCount++
+			if debug {
+				fmt.Println("could be removed, all above have support", i, brick)
+			}
+		} else {
+			couldNotBeRemoved[i] = wouldFall
+			if debug {
+				fmt.Println("could not be removed", i, brick, wouldFall)
 			}
 		}
 	}
-	fmt.Println("couldBeRemovedCount", couldBeRemovedCount)
-	if debug {
-		fmt.Println("bricks = [")
-		for _, brick := range bricks {
-			fmt.Printf("    [(%v, %v, %v), (%v, %v, %v), np.random.rand(3,)],\n", brick.start.x, brick.start.y, brick.start.z, brick.end.x, brick.end.y, brick.end.z)
-		}
-		fmt.Println("]")
+	if part == 1 {
+		fmt.Println("couldBeRemovedCount", couldBeRemovedCount)
+		return
 	}
+
+	sumOfFallenBricks := 0
+	for index := range couldNotBeRemoved {
+		copyBricks := make([]Brick, len(bricks))
+		copy(copyBricks, bricks)
+		copyBricks[index].deleted = true
+		simulateRemovingBrick(copyBricks, index)
+		wouldFall := -1
+		for _, brick := range copyBricks {
+			if brick.deleted {
+				wouldFall++
+			}
+		}
+
+		if debug {
+			fmt.Println(index, "wouldFall", wouldFall)
+		}
+		sumOfFallenBricks += wouldFall
+	}
+	fmt.Println("sumOfFallenBricks", sumOfFallenBricks)
 }
 
-func partTwo(lines []string) {
+var cache = make(map[int]int)
 
+func simulateRemovingBrick(bricks []Brick, index int) {
+	fallen := make([]int, 0)
+	for _, aboveIndex := range bricks[index].directlyAbove {
+		if debug {
+			fmt.Println("aboveWouldFallIndex", aboveIndex)
+		}
+		stillHasSupport := false
+		for _, belowIndex := range bricks[aboveIndex].directlyBelow {
+			if belowIndex != index && !bricks[belowIndex].deleted {
+				stillHasSupport = true
+				break
+			}
+		}
+		if !stillHasSupport {
+			bricks[aboveIndex].deleted = true
+			fallen = append(fallen, aboveIndex)
+		}
+	}
+	for _, aboveIndex := range fallen {
+		simulateRemovingBrick(bricks, aboveIndex)
+	}
 }
 
 func main() {
@@ -194,11 +234,7 @@ func main() {
 
 	startTime := time.Now()
 
-	if part == 1 {
-		partOne(lines)
-	} else {
-		partTwo(lines)
-	}
+	solve(lines)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
