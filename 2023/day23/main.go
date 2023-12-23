@@ -126,7 +126,6 @@ func partOne(lines []string) {
 	paths = make([][]Coordinate, 1)
 	paths[0] = make([]Coordinate, 0)
 	goTo(start, end, copyLines, 0)
-	//fmt.Printf("Longest path: %v\n", longestPath)
 	longestPath := 0
 	for i, path := range paths {
 		pathLength := len(path) - 1 // -1 because we don't count the start
@@ -153,8 +152,58 @@ func partOne(lines []string) {
 	fmt.Printf("Longest path: %v\n", longestPath)
 }
 
-func partTwo(lines []string) {
+func longestPath(grid []string, start Coordinate, end Coordinate) int {
+	rows := len(grid)
+	if rows == 0 {
+		return 0
+	}
+	cols := len(grid[0])
 
+	// Directions: North, South, East, West
+	dRow := []int{-1, 1, 0, 0}
+	dCol := []int{0, 0, 1, -1}
+
+	visited := make([][]bool, rows)
+	for i := range visited {
+		visited[i] = make([]bool, cols)
+	}
+
+	var dfs func(row, col, length int) int
+	dfs = func(row, col, length int) int {
+		if row == end.y && col == end.x {
+			return length
+		}
+
+		visited[row][col] = true
+		maxLength := 0 // if end is not reachable from this path, return 0
+
+		for i := 0; i < 4; i++ {
+			newRow, newCol := row+dRow[i], col+dCol[i]
+			if newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && !visited[newRow][newCol] {
+				if string(grid[newRow][newCol]) == "#" {
+					continue
+				}
+				maxLength = max(maxLength, dfs(newRow, newCol, length+1))
+			}
+		}
+
+		visited[row][col] = false // backtrack
+		return maxLength
+	}
+
+	return dfs(start.y, start.x, 0)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func partTwo(lines []string) {
+	longest := longestPath(lines, Coordinate{1, 0}, Coordinate{len(lines[0]) - 2, len(lines) - 1})
+	fmt.Printf("Longest path: %v\n", longest)
 }
 
 func main() {
@@ -171,6 +220,10 @@ func main() {
 	if part == 1 {
 		partOne(lines)
 	} else {
+		if !debug {
+			fmt.Println("Warning: running this will take multiple minutes")
+			// TODO optimise this by parsing the graph better and only storing points that branch
+		}
 		partTwo(lines)
 	}
 
