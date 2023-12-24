@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // Function to calculate GCD
@@ -98,4 +99,13 @@ func ReadInput(day int, args []string) ([]string, error) {
 	}
 
 	return lines, nil
+}
+
+func MustAtoi(s string) int {
+	trimmed := strings.TrimSpace(s)
+	result, err := strconv.Atoi(trimmed)
+	if err != nil {
+		panic(fmt.Sprintf("Error converting %v to int: %v", trimmed, err))
+	}
+	return result
 }
