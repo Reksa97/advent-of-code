@@ -49,6 +49,23 @@ func isInFuture(hailstone Hailstone, x float64, y float64) bool {
 	return true
 }
 
+func parseHailstone(line string) Hailstone {
+	split := strings.Split(line, " @ ")
+	coordinateSplit := strings.Split(split[0], ", ")
+	velocitySplit := strings.Split(split[1], ", ")
+	hailstone := Hailstone{
+		x:         common.MustAtoi(coordinateSplit[0]),
+		y:         common.MustAtoi(coordinateSplit[1]),
+		z:         common.MustAtoi(coordinateSplit[2]),
+		xVelocity: common.MustAtoi(velocitySplit[0]),
+		yVelocity: common.MustAtoi(velocitySplit[1]),
+		zVelocity: common.MustAtoi(velocitySplit[2]),
+	}
+	hailstone.slope = float64(hailstone.yVelocity) / float64(hailstone.xVelocity)
+	hailstone.yAtX0 = float64(hailstone.y) - (hailstone.slope * float64(hailstone.x))
+	return hailstone
+}
+
 func partOne(lines []string) {
 	minXY := 200000000000000
 	maxXY := 400000000000000
@@ -58,19 +75,7 @@ func partOne(lines []string) {
 	}
 	hailstones := make([]Hailstone, len(lines))
 	for i, line := range lines {
-		split := strings.Split(line, " @ ")
-		coordinateSplit := strings.Split(split[0], ", ")
-		velocitySplit := strings.Split(split[1], ", ")
-		hailstones[i] = Hailstone{
-			x:         common.MustAtoi(coordinateSplit[0]),
-			y:         common.MustAtoi(coordinateSplit[1]),
-			z:         common.MustAtoi(coordinateSplit[2]),
-			xVelocity: common.MustAtoi(velocitySplit[0]),
-			yVelocity: common.MustAtoi(velocitySplit[1]),
-			zVelocity: common.MustAtoi(velocitySplit[2]),
-		}
-		hailstones[i].slope = float64(hailstones[i].yVelocity) / float64(hailstones[i].xVelocity)
-		hailstones[i].yAtX0 = float64(hailstones[i].y) - (hailstones[i].slope * float64(hailstones[i].x))
+		hailstones[i] = parseHailstone(line)
 		if debug {
 			fmt.Println(hailstones)
 		}
@@ -119,7 +124,33 @@ func partOne(lines []string) {
 }
 
 func partTwo(lines []string) {
+	fileContent := make([]string, 0)
+	fileContent = append(fileContent, "var('x y z vx vy vz t1 t2 t3 ans')")
+	for i, line := range lines[0:3] {
+		hailstone := parseHailstone(line)
+		eqIndex := i*3 + 1
+		fileContent = append(fileContent, fmt.Sprintf("eq%v = x + vx * t%v == %v + (%v * t%v)", eqIndex, i+1, hailstone.x, hailstone.xVelocity, i+1))
+		eqIndex++
+		fileContent = append(fileContent, fmt.Sprintf("eq%v = y + vy * t%v == %v + (%v * t%v)", eqIndex, i+1, hailstone.y, hailstone.yVelocity, i+1))
+		eqIndex++
+		fileContent = append(fileContent, fmt.Sprintf("eq%v = z + vz * t%v == %v + (%v * t%v)", eqIndex, i+1, hailstone.z, hailstone.zVelocity, i+1))
+	}
+	fileContent = append(fileContent, "eq10 = ans == x + y + z")
+	fileContent = append(fileContent, "print(solve([eq1,eq2,eq3,eq4,eq5,eq6,eq7,eq8,eq9,eq10],x,y,z,vx,vy,vz,t1,t2,t3,ans))")
 
+	file, err := os.Create("day24/part2.sage")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	for _, str := range fileContent {
+		_, err := file.WriteString(str + "\n") // Adding a newline for readability
+		if err != nil {
+			panic(err)
+		}
+	}
+	fmt.Println("Run 'load(\"day24/part2.sage\")' in SageMath")
 }
 
 func main() {
